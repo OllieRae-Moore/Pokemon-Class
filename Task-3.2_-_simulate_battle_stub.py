@@ -4,8 +4,10 @@ Exercise 3.2: Simulate a Turn-Based Battle (Class-Based)
 In this exercise, you will create a Pokemon class and use it to simulate battles.
 This demonstrates object-oriented programming principles: encapsulation, methods, and clear responsibilities.
 """
-
+#name = Oliver Rae-Moore
+#ID = 20195645300
 import httpx
+import random
 
 
 class Pokemon:
@@ -13,7 +15,7 @@ class Pokemon:
     Represents a Pokemon with stats fetched from the PokeAPI.
     """
 
-    def __init__(self, name):
+    def __init__(self, name:str):
         """
         Initialise a Pokemon by fetching its data from the API and calculating its stats.
 
@@ -33,8 +35,27 @@ class Pokemon:
         # - Use _calculate_hp() for max HP
         # - Store stats in a dictionary
         # - Set current_hp = max_hp
+        self.name = name.lower()
+        self.base_stats = self.fetchstats(name)
+        self.hpstat = self._calculate_hp(self.base_stats['hp'])
+        self.attackstat = self._calculate_stat(self.base_stats['attack'])
+        self.defensestat = self._calculate_stat(self.base_stats['defense'])
+        self.speedstat = self._calculate_stat(self.base_stats['speed'])
+        self.currenthp = self.hpstat
+    def fetchstats(self, name:str):
+        url = f"https://pokeapi.co/api/v2/pokemon/{name}"
+        data = httpx.get(url)
+        Json = data.json()
+        base_stats = {stat['stat']['name']: stat['base_stat'] for stat in Json['stats']}
 
-        pass
+        return base_stats
+    
+
+    
+
+
+
+
 
     def _calculate_stat(self, base_stat, level=50, iv=15, ev=85):
         """
@@ -52,7 +73,8 @@ class Pokemon:
         """
         # TODO: Implement the stat calculation formula
         # Formula: int(((2 * base_stat + iv + (ev / 4)) * level / 100) + 5)
-        pass
+        return int(((2 * base_stat + iv + (ev / 4)) * level / 100) + 5)
+        
 
     def _calculate_hp(self, base_stat, level=50, iv=15, ev=85):
         """
@@ -70,7 +92,9 @@ class Pokemon:
         """
         # TODO: Implement the HP calculation formula
         # Formula: int(((2 * base_stat + iv + (ev / 4)) * level / 100) + level + 10)
-        pass
+        return int(((2 * base_stat + iv + (ev / 4)) * level / 100) + level + 10)
+    
+
 
     def attack(self, defender):
         """
@@ -90,7 +114,9 @@ class Pokemon:
         # Call defender.take_damage(damage)
 
         # TODO: Return the damage amount
-        pass
+        damage = int((((2 * 50 * 0.4 + 2) * self.attackstat * 60) / (defender.defensestat * 50)) + 2)
+        defender.take_damage(damage)
+        return damage
 
     def take_damage(self, amount):
         """
@@ -101,7 +127,11 @@ class Pokemon:
         """
         # TODO: Reduce current_hp by amount
         # Make sure HP doesn't go below 0
-        pass
+        if amount > self.currenthp:
+            self.currenthp = 0
+        else:
+            self.currenthp -= amount
+        
 
     def is_fainted(self):
         """
@@ -111,7 +141,11 @@ class Pokemon:
             bool: True if fainted, False otherwise
         """
         # TODO: Return True if current_hp <= 0, False otherwise
-        pass
+        if self.currenthp <= 0:
+            return True
+        else:
+            return False
+
 
     def __str__(self):
         """
@@ -121,10 +155,11 @@ class Pokemon:
             str: A nice display of the Pokemon's name and HP
         """
         # TODO: Return a string like "Pikachu (HP: 95/120)"
-        pass
+
+        return f"{self.name.capitalize()} (HP:{self.currenthp}/{self.hpstat})"
 
 
-def simulate_battle(pokemon1_name, pokemon2_name):
+def simulate_battle(pokemon1_name:str, pokemon2_name:str):
     """
     Simulate a turn-based battle between two Pokemon.
 
@@ -133,12 +168,35 @@ def simulate_battle(pokemon1_name, pokemon2_name):
         pokemon2_name (str): Name of the second Pokemon
     """
     # TODO: Create two Pokemon objects
-
+    pokemon1 = Pokemon(pokemon1_name)
+    pokemon2 = Pokemon(pokemon2_name)
     # TODO: Display battle start message
     # Show both Pokemon names and initial HP
+    print("Battle Starts!")
+    print(str(pokemon1))
+    print(str(pokemon2))
 
+    
     # TODO: Determine who attacks first based on speed
+    if pokemon1.speedstat > pokemon2.speedstat:
+        attacker = pokemon1
+        defender = pokemon2
+    elif pokemon1.speedstat < pokemon2.speedstat:
+        attacker = pokemon2
+        defender = pokemon1
+    #adding this because there might be a speed tie
+    else:
+        number = random.randint(1,2)
+        if number == 1:
+            attacker = pokemon1
+            defender = pokemon2
+        else:
+            attacker = pokemon2
+            defender = pokemon1
+
+
     # The Pokemon with higher speed goes first
+
     # Hint: Compare pokemon1.stats['speed'] with pokemon2.stats['speed']
 
     # TODO: Battle loop
@@ -150,10 +208,25 @@ def simulate_battle(pokemon1_name, pokemon2_name):
     #   - Check if defender fainted
     #   - If not, swap attacker and defender
     #   - Increment round number
-
+    count = 0
+    while not pokemon1.is_fainted() == True and not pokemon2.is_fainted() == True:
+        count += 1
+        print(f"Round {count}")
+        print(f"{attacker} deals {attacker.attack(defender)} damage")
+        print(f"{defender.name.capitalize()} has {defender.currenthp}HP")
+        if defender.is_fainted() == True:
+            break
+        else:
+            continue
+        print(f"{defender} deals {defender.attack(attacker)} damage ")
+        print(f"{attacker.name.capitalize()} has {attacker.currenthp}HP")
+    if pokemon1.is_fainted() == True:
+        print(f"{pokemon2.name.capitalize()} wins with {pokemon2.currenthp}HP")
+    else:
+        print(f"{pokemon1.name.capitalize()} wins with {pokemon1.currenthp}HP")
     # TODO: Display battle result
     # Show which Pokemon won and their remaining HP
-    pass
+    
 
 
 if __name__ == "__main__":
@@ -161,5 +234,5 @@ if __name__ == "__main__":
     simulate_battle("pikachu", "bulbasaur")
 
     # Uncomment to test other battles:
-    # simulate_battle("charmander", "squirtle")
-    # simulate_battle("eevee", "jigglypuff")
+    simulate_battle("charmander", "squirtle")
+    simulate_battle("eevee", "jigglypuff")
